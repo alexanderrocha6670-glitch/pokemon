@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pokédex Futurista - Ruleta</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    color: white;
+    text-align: center;
+    transition: background 1s ease;
+}
+
+h1 {
+    margin-top: 20px;
+    letter-spacing: 3px;
+}
+
+.panel {
+    width: 360px;
+    margin: 30px auto;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.65);
+    box-shadow: 0 0 25px cyan;
+}
+
+select, button {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    background: cyan;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: lime;
+}
+
+#pokemon-img {
+    width: 150px;
+    margin-top: 15px;
+    transition: 0.5s;
+}
+
+.comun { color: white; }
+.poco { color: lightblue; }
+.raro { color: violet; }
+.ultra { 
+    color: gold; 
+    text-shadow: 0 0 10px gold;
+    animation: brillo 1s infinite alternate;
+}
+
+@keyframes brillo {
+    from { text-shadow: 0 0 5px gold; }
+    to { text-shadow: 0 0 20px orange; }
+}
+</style>
+</head>
+
+<body id="body">
+
+<h1>🧿 Pokédex Futurista 🧿</h1>
+
+<div class="panel">
+
+<select id="zona" onchange="cambiarFondo()">
+    <option value="fire,rock,ground">Cordillera Ígnea</option>
+    <option value="water,ice,flying">Costa Coralina</option>
+    <option value="ice,normal">Llanuras Ventisca</option>
+    <option value="ground,rock,steel,poison">Zona Subterránea</option>
+    <option value="ghost,psychic,dragon,dark">Ruinas Antiguas</option>
+    <option value="grass,bug,normal,poison">Bosque Esmeralda</option>
+</select>
+
+<br>
+
+<button onclick="invocar()">INVOCAR</button>
+
+<div id="resultado">
+    <h2 id="nombre"></h2>
+    <img id="pokemon-img">
+    <p id="numero"></p>
+    <p id="tipo"></p>
+    <p id="rareza"></p>
+</div>
+
+</div>
+
+<script>
+
+// IDs legendarios y míticos hasta 807
+const bloqueados = [
+144,145,146,150,151,
+243,244,245,249,250,251,
+377,378,379,380,381,382,383,384,385,386,
+480,481,482,483,484,485,486,487,488,489,490,491,492,493,
+638,639,640,641,642,643,644,645,646,647,648,649,
+716,717,718,719,720,721,
+785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,801,802,807
+];
+
+function cambiarFondo() {
+    const zona = document.getElementById("zona").selectedIndex;
+    const body = document.getElementById("body");
+
+    const fondos = [
+        "linear-gradient(135deg,#ff512f,#dd2476)", // Ígnea
+        "linear-gradient(135deg,#2193b0,#6dd5ed)", // Coralina
+        "linear-gradient(135deg,#83a4d4,#b6fbff)", // Ventisca
+        "linear-gradient(135deg,#232526,#414345)", // Subterránea
+        "linear-gradient(135deg,#141e30,#243b55)", // Ruinas
+        "linear-gradient(135deg,#134e5e,#71b280)"  // Bosque
+    ];
+
+    body.style.background = fondos[zona];
+}
+
+async function invocar() {
+
+    let tiposZona = document.getElementById("zona").value.split(",");
+    let tipoElegido = tiposZona[Math.floor(Math.random() * tiposZona.length)];
+
+    let responseTipo = await fetch(`https://pokeapi.co/api/v2/type/${tipoElegido}`);
+    let dataTipo = await responseTipo.json();
+
+    let lista = dataTipo.pokemon
+        .map(p => p.pokemon.url)
+        .filter(url => {
+            let id = parseInt(url.split("/")[6]);
+            return id <= 807 && !bloqueados.includes(id);
+        });
+
+    let randomUrl = lista[Math.floor(Math.random() * lista.length)];
+
+    let responsePoke = await fetch(randomUrl);
+    let dataPoke = await responsePoke.json();
+
+    let rarezaRoll = Math.random();
+    let rarezaTexto = "";
+    let clase = "";
+
+    if (rarezaRoll < 0.6) {
+        rarezaTexto = "Común";
+        clase = "comun";
+    } else if (rarezaRoll < 0.85) {
+        rarezaTexto = "Poco común";
+        clase = "poco";
+    } else if (rarezaRoll < 0.95) {
+        rarezaTexto = "Raro";
+        clase = "raro";
+    } else {
+        rarezaTexto = "ULTRA RARO ✨";
+        clase = "ultra";
+    }
+
+    document.getElementById("nombre").innerText = dataPoke.name.toUpperCase();
+    document.getElementById("numero").innerText = "N° Pokédex: " + dataPoke.id;
+    document.getElementById("tipo").innerText = "Tipo: " + dataPoke.types.map(t => t.type.name).join(", ");
+    document.getElementById("pokemon-img").src = dataPoke.sprites.other["official-artwork"].front_default;
+
+    let rarezaElemento = document.getElementById("rareza");
+    rarezaElemento.innerText = rarezaTexto;
+    rarezaElemento.className = clase;
+}
+
+// Fondo inicial
+cambiarFondo();
+
+</script>
+
+</body>
+</html>
